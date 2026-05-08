@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block page_title %}Reports &amp; Analytics{% endblock %}
+{% block content %}
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px">
+  {% for icon, href, title, desc, color in [
+    ('📦', url_for('reports.inventory_report'),  'Inventory Report',   'Full stock list with values, categories and low-stock alerts. Export to CSV.',   'var(--accent)'),
+    ('💰', url_for('reports.sales_report'),      'Sales Report',       'Revenue analysis, top products, invoice history by date range. Export to CSV.',  'var(--green)'),
+    ('⚙️', url_for('reports.production_report'), 'Production Report',  'Work orders summary, completion rates and output tracking. Export to CSV.',      'var(--purple)'),
+    ('📋', url_for('reports.stock_movement'),    'Stock Movement',     'Full audit trail of all stock changes — purchases, sales, production, adjustments.', 'var(--blue)'),
+  ] %}
+  <a href="{{ href }}" style="text-decoration:none">
+    <div class="card" style="cursor:pointer;transition:border-color .2s"
+         onmouseover="this.style.borderColor='{{ color }}'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="font-size:40px;margin-bottom:12px">{{ icon }}</div>
+      <div style="font-family:var(--font-display);font-weight:700;font-size:16px;margin-bottom:6px;color:var(--text-primary)">{{ title }}</div>
+      <div style="font-size:13px;color:var(--text-muted)">{{ desc }}</div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}

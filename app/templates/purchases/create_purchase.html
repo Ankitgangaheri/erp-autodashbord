@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Create Purchase Order{% endblock %}
+{% block page_title %}Create Purchase Order{% endblock %}
+{% block topbar_actions %}<a href="{{ url_for('purchases.index') }}" class="btn btn-secondary btn-sm">← Back</a>{% endblock %}
+{% block content %}
+<form method="POST" data-validate>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+    <div class="card">
+      <div class="card-header"><div class="card-title">🛒 Order Details</div></div>
+      <div class="form-group">
+        <label class="form-label">Supplier <span class="required">*</span></label>
+        <select name="supplier_id" class="form-control" required>
+          <option value="">Select supplier…</option>
+          {% for s in suppliers %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Expected Delivery Date</label>
+        <input type="date" name="expected_date" class="form-control">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea name="notes" class="form-control" rows="3" placeholder="Optional notes…"></textarea>
+      </div>
+    </div>
+    <div class="card" style="align-self:start">
+      <div class="card-header"><div class="card-title">📊 Order Summary</div></div>
+      <div style="background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);padding:16px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px">
+          <span class="text-muted">Subtotal:</span><span class="mono fw-bold" id="subtotal-display">₹0.00</span>
+        </div>
+        <hr class="divider" style="margin:10px 0">
+        <div style="display:flex;justify-content:space-between;font-size:16px">
+          <span class="text-muted">Total:</span><span class="mono fw-bold text-accent" id="grand-total">₹0.00</span>
+        </div>
+      </div>
+      <div style="margin-top:16px">
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">✓ Create Purchase Order</button>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">📦 Products to Order</div>
+      <button type="button" id="add-item-btn" class="btn btn-secondary btn-sm">+ Add Product</button>
+    </div>
+    <div class="table-wrapper">
+      <table id="line-items-table">
+        <thead>
+          <tr>
+            <th style="width:38%">Product</th><th style="width:9%">SKU</th>
+            <th style="width:12%">Quantity</th><th style="width:14%">Unit Price (₹)</th>
+            <th style="width:13%">Total</th><th style="width:9%">In Stock</th><th style="width:5%"></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</form>
+{% endblock %}
+{% block extra_js %}
+<script>
+AutoERP.initLineItems('line-items-table','add-item-btn','{{ url_for("inventory.api_search_products") }}','cost_price');
+</script>
+{% endblock %}

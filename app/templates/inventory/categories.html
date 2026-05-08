@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Categories{% endblock %}
+{% block page_title %}Product Categories{% endblock %}
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 2fr;gap:16px">
+  {% if current_user and current_user.role in ('admin','manager') %}
+  <div class="card" style="align-self:start">
+    <div class="card-header"><div class="card-title">+ Add Category</div></div>
+    <form method="POST" action="{{ url_for('inventory.add_category') }}" data-validate>
+      <div class="form-group">
+        <label class="form-label">Name <span class="required">*</span></label>
+        <input type="text" name="name" class="form-control" placeholder="e.g. Suspension" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea name="description" class="form-control" rows="2" placeholder="Optional"></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">Add Category</button>
+    </form>
+  </div>
+  {% endif %}
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">🏷 All Categories</div>
+      <span style="font-family:var(--font-mono);font-size:12px;color:var(--text-muted)">{{ categories|length }} total</span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>#</th><th>Category</th><th>Description</th><th>Products</th><th>Created</th></tr></thead>
+        <tbody>
+          {% for cat in categories %}
+          <tr>
+            <td class="mono text-muted">{{ loop.index }}</td>
+            <td><span class="fw-bold">{{ cat.name }}</span></td>
+            <td style="color:var(--text-muted);font-size:12px">{{ cat.description or '—' }}</td>
+            <td><span class="badge badge-info">{{ counts.get(cat.id, 0) }}</span></td>
+            <td style="font-size:12px;color:var(--text-muted)">{{ cat.created_at[:10] }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="text-center text-muted">No categories yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

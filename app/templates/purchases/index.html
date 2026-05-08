@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Purchases{% endblock %}
+{% block page_title %}Purchase Orders{% endblock %}
+{% block topbar_actions %}
+  {% if current_user and current_user.role in ('admin','manager') %}
+    <a href="{{ url_for('purchases.create_purchase') }}" class="btn btn-primary btn-sm">+ New Purchase Order</a>
+  {% endif %}
+{% endblock %}
+{% block content %}
+<form method="GET">
+  <div class="filter-bar">
+    <div class="search-input-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" name="search" class="search-input" placeholder="Search by PO# or supplier…" value="{{ search }}">
+    </div>
+    <select name="status" class="form-control" style="width:140px">
+      <option value="">All Status</option>
+      <option value="pending"   {% if status=='pending'   %}selected{% endif %}>Pending</option>
+      <option value="received"  {% if status=='received'  %}selected{% endif %}>Received</option>
+      <option value="cancelled" {% if status=='cancelled' %}selected{% endif %}>Cancelled</option>
+    </select>
+    <button type="submit" class="btn btn-secondary">Filter</button>
+    <a href="{{ url_for('purchases.index') }}" class="btn btn-secondary">Clear</a>
+  </div>
+</form>
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">🛒 Purchase Orders <span style="font-family:var(--font-mono);font-size:12px;color:var(--text-muted);font-weight:400">({{ purchases.total }})</span></div>
+  </div>
+  {% if purchases.items %}
+  <div class="table-wrapper">
+    <table>
+      <thead><tr><th>PO Number</th><th>Supplier</th><th>Order Date</th><th>Expected</th><th>Status</th><th>Total</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for po in purchases.items %}
+        <tr>
+          <td><a href="{{ url_for('purchases.view_purchase', po_id=po.id) }}" class="sku">{{ po.po_number }}</a></td>
+          <td>{{ po.supplier_name }}</td>
+          <td style="font-size:12px">{{ po.order_date[:10] }}</td>
+          <td style="font-size:12px;color:var(--text-muted)">{{ po.expected_date[:10] if po.expected_date else '—' }}</td>
+          <td><span class="badge {{ 'badge-success' if po.status=='received' else ('badge-warning' if po.status=='pending' else 'badge-danger') }}">{{ po.status.upper() }}</span></td>
+          <td class="mono text-accent fw-bold">₹{{ "{:,.2f}".format(po.total_amount) }}</td>
+          <td>
+            <div style="display:flex;gap:4px">
+              <a href="{{ url_for('purchases.view_purchase', po_id=po.id) }}" class="btn btn-sm btn-secondary">View</a>
+              {% if po.status == 'pending' and current_user and current_user.role in ('admin','manager') %}
+                <button class="btn btn-sm btn-success" data-post-url="{{ url_for('purchases.receive_purchase', po_id=po.id) }}" data-confirm="Receive PO {{ po.po_number }} and update stock?">Receive</button>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if purchases.pages > 1 %}
+  <div class="pagination">
+    {% if purchases.has_prev %}<a href="{{ url_for('purchases.index', page=purchases.prev_num, search=search, status=status) }}" class="page-link">‹</a>{% endif %}
+    {% for pn in range(1, purchases.pages+1) %}<a href="{{ url_for('purchases.index', page=pn, search=search, status=status) }}" class="page-link {{ 'active' if pn == purchases.page }}">{{ pn }}</a>{% endfor %}
+    {% if purchases.has_next %}<a href="{{ url_for('purchases.index', page=purchases.next_num, search=search, status=status) }}" class="page-link">›</a>{% endif %}
+  </div>
+  {% endif %}
+  {% else %}
+  <div class="empty-state"><div class="empty-state-icon">🛒</div><div class="empty-state-text">No purchase orders found.</div>{% if current_user and current_user.role in ('admin','manager') %}<a href="{{ url_for('purchases.create_purchase') }}" class="btn btn-primary">+ Create PO</a>{% endif %}</div>
+  {% endif %}
+</div>
+{% endblock %}

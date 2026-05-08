@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}{{ order.order_number }}{% endblock %}
+{% block page_title %}Work Order Detail{% endblock %}
+{% block topbar_actions %}
+  {% if current_user and current_user.role in ('admin','manager') %}
+    {% if order.status == 'planned' %}
+      <button class="btn btn-success btn-sm"
+        data-post-url="{{ url_for('production.start_order', order_id=order.id) }}"
+        data-confirm="Start this work order? Raw materials will be deducted.">▶ Start Production</button>
+      <button class="btn btn-danger btn-sm"
+        data-post-url="{{ url_for('production.cancel_order', order_id=order.id) }}"
+        data-confirm="Cancel this work order?">✕ Cancel</button>
+    {% elif order.status == 'in_progress' %}
+      <button class="btn btn-primary btn-sm" id="complete-btn">✓ Complete Order</button>
+    {% endif %}
+  {% endif %}
+  <a href="{{ url_for('production.index') }}" class="btn btn-secondary btn-sm">← Production</a>
+{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">⚙️ {{ order.order_number }}</div>
+      <span class="badge
+        {% if order.status=='completed'   %}badge-success
+        {% elif order.status=='in_progress' %}badge-purple
+        {% elif order.status=='planned'     %}badge-info
+        {% else %}badge-danger{% endif %}" style="font-size:13px;padding:4px 12px">
+        {{ order.status.replace('_',' ').upper() }}
+      </span>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-item"><div class="detail-label">Finished Product</div><div class="detail-value"><a href="{{ url_for('inventory.view_product', pid=order.product_id) }}">{{ order.product_name }}</a></div></div>
+      <div class="detail-item"><div class="detail-label">SKU</div><div class="detail-value sku">{{ order.sku }}</div></div>
+      <div class="detail-item"><div class="detail-label">Planned Qty</div><div class="detail-value mono">{{ order.quantity_planned }}</div></div>
+      <div class="detail-item"><div class="detail-label">Produced Qty</div><div class="detail-value mono text-success">{{ order.quantity_produced }}</div></div>
+      <div class="detail-item"><div class="detail-label">Start Date</div><div class="detail-value">{{ order.start_date[:10] if order.start_date else '—' }}</div></div>
+      <div class="detail-item"><div class="detail-label">End Date</div><div class="detail-value">{{ order.end_date[:10] if order.end_date else '—' }}</div></div>
+    </div>
+    {% if order.notes %}<hr class="divider"><div style="font-size:13px;color:var(--text-secondary)">{{ order.notes }}</div>{% endif %}
+  </div>
+
+  <div class="card" style="align-self:start">
+    <div class="card-header"><div class="card-title">📊 Completion</div></div>
+    <div style="text-align:center;padding:12px 0 20px">
+      <div style="font-family:var(--font-display);font-size:48px;font-weight:800;color:{{ 'var(--green)' if order.completion_percent == 100 else 'var(--accent)' }}">
+        {{ order.completion_percent }}%
+      </div>
+      <div class="progress-bar-wrap" style="margin:12px 0;height:10px">
+        <div class="progress-bar-fill {{ 'green' if order.completion_percent == 100 else '' }}"
+             style="width:{{ order.completion_percent }}%"></div>
+      </div>
+      <div style="font-size:13px;color:var(--text-muted)">{{ order.quantity_produced }} of {{ order.quantity_planned }} units</div>
+    </div>
+  </div>
+</div>
+
+<!-- Materials -->
+<div class="card">
+  <div class="card-header"><div class="card-title">🧱 Raw Materials</div></div>
+  {% if materials %}
+  <div class="table-wrapper">
+    <table>
+      <thead><tr><th>Material</th><th>SKU</th><th>Required</th><th>Consumed</th><th>Current Stock</th><th>Availability</th></tr></thead>
+      <tbody>
+        {% for m in materials %}
+        <tr>
+          <td><a href="{{ url_for('inventory.view_product', pid=m.product_id) }}" style="color:var(--text-primary);font-weight:500">{{ m.mat_name }}</a></td>
+          <td><span class="sku">{{ m.sku }}</span></td>
+          <td class="mono">{{ m.quantity_required }} {{ m.unit }}</td>
+          <td class="mono {{ 'text-success' if m.quantity_consumed > 0 else 'text-muted' }}">{{ m.quantity_consumed }}</td>
+          <td class="mono">{{ m.stock }}</td>
+          <td>
+            {% if m.stock >= m.quantity_required %}
+              <span class="badge badge-success">Sufficient</span>
+            {% else %}
+              <span class="badge badge-danger">Short by {{ m.quantity_required - m.stock }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state" style="padding:24px"><div>No raw materials specified for this work order.</div></div>
+  {% endif %}
+</div>
+
+<!-- Complete form (shown on button click) -->
+{% if order.status == 'in_progress' and current_user and current_user.role in ('admin','manager') %}
+<div id="complete-form-card" class="card" style="display:none;margin-top:16px;border-color:var(--green);max-width:480px">
+  <div class="card-header"><div class="card-title" style="color:var(--green)">✓ Complete Work Order</div></div>
+  <form method="POST" action="{{ url_for('production.complete_order', order_id=order.id) }}">
+    <div class="form-group">
+      <label class="form-label">Actual Quantity Produced <span class="required">*</span></label>
+      <input type="number" name="quantity_produced" class="form-control" min="1" value="{{ order.quantity_planned }}" required>
+      <div class="form-hint">Finished goods will be added to inventory stock.</div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button type="submit" class="btn btn-success">✓ Confirm &amp; Add to Stock</button>
+      <button type="button" id="cancel-complete-btn" class="btn btn-secondary">Cancel</button>
+    </div>
+  </form>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const completeBtn = document.getElementById('complete-btn');
+const formCard    = document.getElementById('complete-form-card');
+const cancelBtn   = document.getElementById('cancel-complete-btn');
+if (completeBtn && formCard) {
+  completeBtn.addEventListener('click', () => { formCard.style.display = 'block'; formCard.scrollIntoView({behavior:'smooth'}); });
+  cancelBtn.addEventListener('click',   () => { formCard.style.display = 'none'; });
+}
+</script>
+{% endblock %}

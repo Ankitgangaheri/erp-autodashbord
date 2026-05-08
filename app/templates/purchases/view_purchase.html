@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}{{ purchase.po_number }}{% endblock %}
+{% block page_title %}Purchase Order{% endblock %}
+{% block topbar_actions %}
+  {% if purchase.status == 'pending' and current_user and current_user.role in ('admin','manager') %}
+    <button class="btn btn-success btn-sm" data-post-url="{{ url_for('purchases.receive_purchase', po_id=purchase.id) }}" data-confirm="Receive this order and update stock?">✓ Mark Received</button>
+    <button class="btn btn-danger btn-sm" data-post-url="{{ url_for('purchases.cancel_purchase', po_id=purchase.id) }}" data-confirm="Cancel this purchase order?">✕ Cancel</button>
+  {% endif %}
+  <a href="{{ url_for('purchases.index') }}" class="btn btn-secondary btn-sm">← Purchases</a>
+{% endblock %}
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">🛒 {{ purchase.po_number }}</div>
+      <span class="badge {{ 'badge-success' if purchase.status=='received' else ('badge-warning' if purchase.status=='pending' else 'badge-danger') }}" style="font-size:13px;padding:4px 12px">{{ purchase.status.upper() }}</span>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-item"><div class="detail-label">Supplier</div><div class="detail-value">{{ purchase.supplier_name }}</div></div>
+      <div class="detail-item"><div class="detail-label">Order Date</div><div class="detail-value">{{ purchase.order_date[:10] }}</div></div>
+      <div class="detail-item"><div class="detail-label">Expected Date</div><div class="detail-value">{{ purchase.expected_date[:10] if purchase.expected_date else '—' }}</div></div>
+      <div class="detail-item"><div class="detail-label">Received Date</div><div class="detail-value">{{ purchase.received_date[:10] if purchase.received_date else '—' }}</div></div>
+    </div>
+    {% if purchase.notes %}<hr class="divider"><div style="font-size:13px;color:var(--text-secondary)">{{ purchase.notes }}</div>{% endif %}
+  </div>
+  <div class="card" style="align-self:start">
+    <div class="card-header"><div class="card-title">💰 Amount</div></div>
+    <div style="text-align:center;padding:16px 0">
+      <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted);letter-spacing:1px;margin-bottom:6px">TOTAL ORDER VALUE</div>
+      <div style="font-family:var(--font-display);font-size:36px;font-weight:800;color:var(--accent)">₹{{ "{:,.2f}".format(purchase.total_amount) }}</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:4px">{{ items|length }} line item(s)</div>
+    </div>
+  </div>
+</div>
+<div class="card">
+  <div class="card-header"><div class="card-title">📦 Ordered Items</div></div>
+  <div class="table-wrapper">
+    <table>
+      <thead><tr><th>SKU</th><th>Product</th><th>Quantity</th><th>Unit Price</th><th>Total</th></tr></thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td><span class="sku">{{ item.sku }}</span></td>
+          <td><a href="{{ url_for('inventory.view_product', pid=item.product_id) }}" style="color:var(--text-primary);font-weight:500">{{ item.product_name }}</a></td>
+          <td class="mono">{{ item.quantity }} {{ item.unit }}</td>
+          <td class="mono">₹{{ "{:,.2f}".format(item.unit_price) }}</td>
+          <td class="mono fw-bold text-accent">₹{{ "{:,.2f}".format(item.total_price) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="4" class="text-right fw-bold" style="padding:12px 14px;color:var(--text-secondary)">TOTAL</td>
+          <td class="mono fw-bold text-accent" style="padding:12px 14px;font-size:16px">₹{{ "{:,.2f}".format(purchase.total_amount) }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+{% endblock %}

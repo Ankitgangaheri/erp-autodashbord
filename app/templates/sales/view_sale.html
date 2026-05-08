@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}{{ sale.invoice_number }}{% endblock %}
+{% block page_title %}Invoice Detail{% endblock %}
+{% block topbar_actions %}
+  {% if sale.status == 'completed' and current_user and current_user.role in ('admin','manager') %}
+    <button class="btn btn-danger btn-sm" data-post-url="{{ url_for('sales.cancel_sale', sale_id=sale.id) }}" data-confirm="Cancel invoice {{ sale.invoice_number }}? Stock will be restored.">✕ Cancel Invoice</button>
+  {% endif %}
+  <button onclick="window.print()" class="btn btn-secondary btn-sm">🖨 Print</button>
+  <a href="{{ url_for('sales.index') }}" class="btn btn-secondary btn-sm">← Sales</a>
+{% endblock %}
+{% block content %}
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">🧾 {{ sale.invoice_number }}</div>
+      <span class="badge {{ 'badge-success' if sale.status=='completed' else 'badge-danger' }}" style="font-size:13px;padding:4px 12px">{{ sale.status.upper() }}</span>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-item"><div class="detail-label">Customer</div><div class="detail-value">{{ sale.customer_name or '—' }}</div></div>
+      <div class="detail-item"><div class="detail-label">Invoice Date</div><div class="detail-value">{{ sale.created_at[:16] }}</div></div>
+      <div class="detail-item"><div class="detail-label">Payment Method</div><div class="detail-value"><span class="badge badge-info">{{ sale.payment_method.upper() }}</span></div></div>
+    </div>
+    {% if sale.notes %}<hr class="divider"><div style="font-size:13px;color:var(--text-secondary)">{{ sale.notes }}</div>{% endif %}
+  </div>
+  <div class="card" style="align-self:start">
+    <div class="card-header"><div class="card-title">💰 Breakdown</div></div>
+    <div style="display:flex;flex-direction:column;gap:8px;font-size:13px">
+      <div style="display:flex;justify-content:space-between"><span class="text-muted">Subtotal:</span><span class="mono">₹{{ "{:,.2f}".format(sale.subtotal) }}</span></div>
+      <div style="display:flex;justify-content:space-between"><span class="text-muted">Discount:</span><span class="mono text-danger">- ₹{{ "{:,.2f}".format(sale.discount) }}</span></div>
+      <div style="display:flex;justify-content:space-between"><span class="text-muted">Tax ({{ sale.tax }}%):</span><span class="mono">+ ₹{{ "{:,.2f}".format(sale.subtotal * (sale.tax / 100)) }}</span></div>
+      <hr class="divider" style="margin:4px 0">
+      <div style="display:flex;justify-content:space-between;font-size:20px"><span class="text-muted">Total:</span><span class="mono fw-bold text-success">₹{{ "{:,.2f}".format(sale.total_amount) }}</span></div>
+    </div>
+  </div>
+</div>
+<div class="card">
+  <div class="card-header"><div class="card-title">🛍 Items Sold</div></div>
+  <div class="table-wrapper">
+    <table>
+      <thead><tr><th>SKU</th><th>Product</th><th>Quantity</th><th>Unit Price</th><th>Total</th></tr></thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td><span class="sku">{{ item.sku }}</span></td>
+          <td><a href="{{ url_for('inventory.view_product', pid=item.product_id) }}" style="color:var(--text-primary);font-weight:500">{{ item.product_name }}</a></td>
+          <td class="mono">{{ item.quantity }} {{ item.unit }}</td>
+          <td class="mono">₹{{ "{:,.2f}".format(item.unit_price) }}</td>
+          <td class="mono fw-bold text-accent">₹{{ "{:,.2f}".format(item.total_price) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="4" class="text-right fw-bold" style="padding:12px 14px;color:var(--text-secondary)">TOTAL</td>
+          <td class="mono fw-bold text-success" style="padding:12px 14px;font-size:16px">₹{{ "{:,.2f}".format(sale.total_amount) }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+{% endblock %}

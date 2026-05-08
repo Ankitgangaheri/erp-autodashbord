@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Stock Movement{% endblock %}
+{% block page_title %}Stock Movement Report{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('reports.stock_movement', date_from=date_from, date_to=date_to, export='csv') }}" class="btn btn-secondary btn-sm">⬇ Export CSV</a>
+  <a href="{{ url_for('reports.index') }}" class="btn btn-secondary btn-sm">← Reports</a>
+{% endblock %}
+{% block content %}
+<form method="GET">
+  <div class="filter-bar">
+    <div style="display:flex;align-items:center;gap:8px">
+      <label style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted)">FROM</label>
+      <input type="date" name="date_from" class="form-control" value="{{ date_from }}" style="width:150px">
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <label style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted)">TO</label>
+      <input type="date" name="date_to" class="form-control" value="{{ date_to }}" style="width:150px">
+    </div>
+    <button type="submit" class="btn btn-secondary">Apply</button>
+  </div>
+</form>
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">📋 Stock Movement Log</div>
+    <span style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted)">{{ movements|length }} records</span>
+  </div>
+  {% if movements %}
+  <div class="table-wrapper">
+    <table>
+      <thead><tr><th>Date &amp; Time</th><th>Product</th><th>SKU</th><th>Type</th><th>Change</th><th>Before</th><th>After</th><th>Notes</th></tr></thead>
+      <tbody>
+        {% for m in movements %}
+        <tr>
+          <td class="mono" style="font-size:12px">{{ m.created_at[:16] }}</td>
+          <td><a href="{{ url_for('inventory.view_product', pid=m.product_id) }}" style="color:var(--text-primary)">{{ m.product_name }}</a></td>
+          <td><span class="sku">{{ m.sku }}</span></td>
+          <td><span class="badge {% if m.change_type=='sale' %}badge-danger{% elif m.change_type=='purchase' %}badge-success{% elif m.change_type=='production' %}badge-purple{% elif m.change_type=='adjustment' %}badge-info{% else %}badge-muted{% endif %}">{{ m.change_type }}</span></td>
+          <td class="mono fw-bold {{ 'text-success' if m.quantity_change > 0 else 'text-danger' }}">{{ "{:+d}".format(m.quantity_change) }}</td>
+          <td class="mono text-muted">{{ m.quantity_before }}</td>
+          <td class="mono">{{ m.quantity_after }}</td>
+          <td style="font-size:12px;color:var(--text-muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ m.notes or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state"><div class="empty-state-icon">📋</div><div>No movements in this period.</div></div>
+  {% endif %}
+</div>
+{% endblock %}

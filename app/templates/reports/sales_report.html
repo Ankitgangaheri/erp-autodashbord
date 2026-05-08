@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Sales Report{% endblock %}
+{% block page_title %}Sales Report{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('reports.sales_report', date_from=date_from, date_to=date_to, export='csv') }}" class="btn btn-secondary btn-sm">⬇ Export CSV</a>
+  <a href="{{ url_for('reports.index') }}" class="btn btn-secondary btn-sm">← Reports</a>
+{% endblock %}
+{% block content %}
+<form method="GET">
+  <div class="filter-bar">
+    <div style="display:flex;align-items:center;gap:8px">
+      <label style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted)">FROM</label>
+      <input type="date" name="date_from" class="form-control" value="{{ date_from }}" style="width:150px">
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <label style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted)">TO</label>
+      <input type="date" name="date_to" class="form-control" value="{{ date_to }}" style="width:150px">
+    </div>
+    <button type="submit" class="btn btn-secondary">Apply</button>
+  </div>
+</form>
+
+<div class="stats-grid" style="margin-bottom:16px">
+  <div class="stat-card green"><div class="stat-label">Total Revenue</div><div class="stat-value">₹{{ "{:,.0f}".format(total_revenue) }}</div><div class="stat-icon">💰</div></div>
+  <div class="stat-card blue"><div class="stat-label">Total Invoices</div><div class="stat-value">{{ total_sales }}</div><div class="stat-icon">🧾</div></div>
+  <div class="stat-card amber"><div class="stat-label">Avg Invoice</div><div class="stat-value">₹{{ "{:,.0f}".format(total_revenue / total_sales if total_sales else 0) }}</div><div class="stat-icon">📊</div></div>
+</div>
+
+{% if top_products %}
+<div class="card" style="margin-bottom:16px">
+  <div class="card-header"><div class="card-title">🏆 Top Selling Products</div></div>
+  <div class="table-wrapper">
+    <table>
+      <thead><tr><th>#</th><th>Product</th><th>Units Sold</th><th>Revenue</th></tr></thead>
+      <tbody>
+        {% for tp in top_products %}
+        <tr>
+          <td class="mono text-muted">{{ loop.index }}</td>
+          <td class="fw-bold">{{ tp.name }}</td>
+          <td class="mono">{{ tp.total_qty }}</td>
+          <td class="mono text-success fw-bold">₹{{ "{:,.2f}".format(tp.total_revenue) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">🧾 Invoice History</div>
+    <span style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted)">{{ date_from }} → {{ date_to }}</span>
+  </div>
+  {% if sales %}
+  <div class="table-wrapper">
+    <table>
+      <thead><tr><th>Invoice</th><th>Date</th><th>Customer</th><th>Payment</th><th>Subtotal</th><th>Discount</th><th>Total</th></tr></thead>
+      <tbody>
+        {% for s in sales %}
+        <tr>
+          <td><a href="{{ url_for('sales.view_sale', sale_id=s.id) }}" class="sku">{{ s.invoice_number }}</a></td>
+          <td style="font-size:12px">{{ s.created_at[:16] }}</td>
+          <td>{{ s.customer_name or '—' }}</td>
+          <td><span class="badge badge-info">{{ s.payment_method }}</span></td>
+          <td class="mono">₹{{ "{:,.2f}".format(s.subtotal) }}</td>
+          <td class="mono text-danger">{% if s.discount > 0 %}-₹{{ "{:,.2f}".format(s.discount) }}{% else %}—{% endif %}</td>
+          <td class="mono fw-bold text-success">₹{{ "{:,.2f}".format(s.total_amount) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state"><div class="empty-state-icon">💸</div><div>No sales in this period.</div></div>
+  {% endif %}
+</div>
+{% endblock %}

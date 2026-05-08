@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Edit User{% endblock %}
+{% block page_title %}Edit User{% endblock %}
+{% block topbar_actions %}<a href="{{ url_for('auth.users') }}" class="btn btn-secondary btn-sm">← Back</a>{% endblock %}
+{% block content %}
+<div class="card" style="max-width:560px">
+  <div class="card-header">
+    <div class="card-title">✏️ Edit — <span class="mono">{{ user.username }}</span></div>
+    <span class="badge {% if user.role=='admin' %}badge-danger{% elif user.role=='manager' %}badge-warning{% else %}badge-info{% endif %}">{{ user.role.upper() }}</span>
+  </div>
+  <form method="POST" data-validate>
+    <div class="form-group">
+      <label class="form-label">Full Name <span class="required">*</span></label>
+      <input type="text" name="full_name" class="form-control" value="{{ user.full_name }}" required>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Email <span class="required">*</span></label>
+        <input type="email" name="email" class="form-control" value="{{ user.email }}" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Role</label>
+        <select name="role" class="form-control">
+          <option value="staff"   {% if user.role=='staff'   %}selected{% endif %}>Staff</option>
+          <option value="manager" {% if user.role=='manager' %}selected{% endif %}>Manager</option>
+          <option value="admin"   {% if user.role=='admin'   %}selected{% endif %}>Admin</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">New Password</label>
+      <input type="password" name="password" class="form-control" minlength="6" placeholder="Leave blank to keep current">
+    </div>
+    <div class="form-group">
+      <label class="form-check">
+        <input type="checkbox" name="is_active" {% if user.is_active %}checked{% endif %}> Account is Active
+      </label>
+    </div>
+    <hr class="divider">
+    <div style="display:flex;gap:10px">
+      <button type="submit" class="btn btn-primary">✓ Save Changes</button>
+      <a href="{{ url_for('auth.users') }}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Production Report{% endblock %}
+{% block page_title %}Production Report{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('reports.production_report', status=status, export='csv') }}" class="btn btn-secondary btn-sm">⬇ Export CSV</a>
+  <a href="{{ url_for('reports.index') }}" class="btn btn-secondary btn-sm">← Reports</a>
+{% endblock %}
+{% block content %}
+<form method="GET">
+  <div class="filter-bar">
+    <select name="status" class="form-control" style="width:160px">
+      <option value="">All Status</option>
+      <option value="planned"     {% if status=='planned'     %}selected{% endif %}>Planned</option>
+      <option value="in_progress" {% if status=='in_progress' %}selected{% endif %}>In Progress</option>
+      <option value="completed"   {% if status=='completed'   %}selected{% endif %}>Completed</option>
+      <option value="cancelled"   {% if status=='cancelled'   %}selected{% endif %}>Cancelled</option>
+    </select>
+    <button type="submit" class="btn btn-secondary">Filter</button>
+    <a href="{{ url_for('reports.production_report') }}" class="btn btn-secondary">Clear</a>
+  </div>
+</form>
+
+<div class="stats-grid" style="margin-bottom:16px">
+  <div class="stat-card purple"><div class="stat-label">Total Orders</div><div class="stat-value">{{ orders|length }}</div><div class="stat-icon">⚙️</div></div>
+  <div class="stat-card green"><div class="stat-label">Units Produced</div><div class="stat-value">{{ total_produced }}</div><div class="stat-icon">🏭</div></div>
+  <div class="stat-card amber"><div class="stat-label">Completed</div><div class="stat-value">{{ orders|selectattr('status','equalto','completed')|list|length }}</div><div class="stat-icon">✅</div></div>
+</div>
+
+<div class="card">
+  <div class="card-header"><div class="card-title">⚙️ Work Orders</div></div>
+  {% if orders %}
+  <div class="table-wrapper">
+    <table>
+      <thead><tr><th>Order #</th><th>Product</th><th>Planned</th><th>Produced</th><th>Progress</th><th>Status</th><th>Start</th><th>End</th></tr></thead>
+      <tbody>
+        {% for o in orders %}
+        <tr>
+          <td><a href="{{ url_for('production.view_order', order_id=o.id) }}" class="sku">{{ o.order_number }}</a></td>
+          <td>{{ o.product_name }}</td>
+          <td class="mono">{{ o.quantity_planned }}</td>
+          <td class="mono text-success">{{ o.quantity_produced }}</td>
+          <td>
+            <div class="progress-bar-wrap">
+              <div class="progress-bar-fill {{ 'green' if o.completion_percent==100 else '' }}" style="width:{{ o.completion_percent }}%"></div>
+            </div>
+            <div style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono)">{{ o.completion_percent }}%</div>
+          </td>
+          <td><span class="badge {% if o.status=='completed' %}badge-success{% elif o.status=='in_progress' %}badge-purple{% elif o.status=='planned' %}badge-info{% else %}badge-danger{% endif %}">{{ o.status.replace('_',' ') }}</span></td>
+          <td style="font-size:12px;color:var(--text-muted)">{{ o.start_date[:10] if o.start_date else '—' }}</td>
+          <td style="font-size:12px;color:var(--text-muted)">{{ o.end_date[:10] if o.end_date else '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state"><div class="empty-state-icon">⚙️</div><div>No production orders found.</div></div>
+  {% endif %}
+</div>
+{% endblock %}

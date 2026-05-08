@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Add Product{% endblock %}
+{% block page_title %}Add New Product{% endblock %}
+{% block topbar_actions %}<a href="{{ url_for('inventory.index') }}" class="btn btn-secondary btn-sm">← Back</a>{% endblock %}
+{% block content %}
+<div class="card" style="max-width:760px">
+  <div class="card-header"><div class="card-title">📦 New Product</div></div>
+  <form method="POST" data-validate>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">SKU <span class="required">*</span></label>
+        <input type="text" name="sku" class="form-control" placeholder="e.g. ENG-001" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Category <span class="required">*</span></label>
+        <select name="category_id" class="form-control" required>
+          <option value="">Select category…</option>
+          {% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Product Name <span class="required">*</span></label>
+      <input type="text" name="name" class="form-control" placeholder="Full product name" required>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <textarea name="description" class="form-control" rows="3" placeholder="Optional description…"></textarea>
+    </div>
+    <div class="form-row-3">
+      <div class="form-group">
+        <label class="form-label">Unit</label>
+        <select name="unit" class="form-control">
+          {% for u in ['pcs','kg','litre','set','pair','box','roll','mtr'] %}
+            <option value="{{ u }}">{{ u }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Cost Price (₹) <span class="required">*</span></label>
+        <input type="number" name="cost_price" class="form-control" step="0.01" min="0" value="0" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Selling Price (₹) <span class="required">*</span></label>
+        <input type="number" name="selling_price" class="form-control" step="0.01" min="0" value="0" required>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Opening Stock</label>
+        <input type="number" name="quantity" class="form-control" min="0" value="0">
+        <div class="form-hint">Initial quantity (creates history entry)</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Low Stock Threshold</label>
+        <input type="number" name="low_stock_threshold" class="form-control" min="0" value="10">
+        <div class="form-hint">Alert when quantity ≤ this</div>
+      </div>
+    </div>
+    <hr class="divider">
+    <div style="display:flex;gap:10px">
+      <button type="submit" class="btn btn-primary">✓ Save Product</button>
+      <a href="{{ url_for('inventory.index') }}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

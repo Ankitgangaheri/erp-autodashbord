@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Low Stock{% endblock %}
+{% block page_title %}Low Stock Alerts{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('purchases.create_purchase') }}" class="btn btn-primary btn-sm">🛒 Create Purchase Order</a>
+{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-title" style="color:var(--red)">⚠️ Items Requiring Reorder
+      <span style="font-family:var(--font-mono);font-size:12px;color:var(--text-muted);font-weight:400">({{ items|length }})</span>
+    </div>
+  </div>
+  {% if items %}
+  <div class="table-wrapper">
+    <table>
+      <thead><tr><th>SKU</th><th>Product</th><th>Category</th><th>Current Qty</th><th>Threshold</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td><span class="sku">{{ item.sku }}</span></td>
+          <td><a href="{{ url_for('inventory.view_product', pid=item.id) }}" style="color:var(--text-primary);font-weight:500">{{ item.name }}</a></td>
+          <td>{{ item.cat_name }}</td>
+          <td><span class="badge {{ 'badge-danger' if item.quantity == 0 else 'badge-warning' }}" style="font-size:13px">{{ item.quantity }} {{ item.unit }}</span></td>
+          <td class="mono text-muted">{{ item.low_stock_threshold }}</td>
+          <td>{% if item.quantity == 0 %}<span class="badge badge-danger">OUT OF STOCK</span>{% else %}<span class="badge badge-warning">LOW STOCK</span>{% endif %}</td>
+          <td><a href="{{ url_for('purchases.create_purchase') }}" class="btn btn-sm btn-primary">Reorder</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon">✅</div>
+    <div class="empty-state-text">All products have sufficient stock!</div>
+    <a href="{{ url_for('inventory.index') }}" class="btn btn-secondary">← Back to Inventory</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

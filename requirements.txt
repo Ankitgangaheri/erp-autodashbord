@@ -1,0 +1,13 @@
+# AutoERP Dependencies
+# All packages below are available in the standard Python 3 installation
+# No external pip install needed — only Flask core which ships with the system
+
+# Flask and its bundled dependencies (Werkzeug, Jinja2, Click, itsdangerous)
+# are pre-installed on this system at /usr/local/lib/python3.12/dist-packages/
+#
+# To install on a fresh machine:
+#   pip install flask werkzeug jinja2 itsdangerous click python-dotenv
+#
+# This app deliberately uses NO additional Flask extensions so it runs
+# anywhere Flask is installed, with only the Python standard library for
+# database access (sqlite3 is built in to Python).

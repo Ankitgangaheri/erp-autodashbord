@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }}{% endblock %}
+{% block page_title %}Product Detail{% endblock %}
+{% block topbar_actions %}
+  {% if current_user and current_user.role in ('admin','manager') %}
+    <a href="{{ url_for('inventory.edit_product', pid=product.id) }}" class="btn btn-info btn-sm">✏️ Edit</a>
+  {% endif %}
+  <a href="{{ url_for('inventory.index') }}" class="btn btn-secondary btn-sm">← Products</a>
+{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">📦 {{ product.name }}</div>
+      <span class="badge {{ 'badge-success' if product.is_active else 'badge-muted' }}">{{ 'Active' if product.is_active else 'Inactive' }}</span>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-item"><div class="detail-label">SKU</div><div class="detail-value sku">{{ product.sku }}</div></div>
+      <div class="detail-item"><div class="detail-label">Category</div><div class="detail-value">{{ product.cat_name }}</div></div>
+      <div class="detail-item"><div class="detail-label">Unit</div><div class="detail-value mono">{{ product.unit }}</div></div>
+      <div class="detail-item">
+        <div class="detail-label">Current Stock</div>
+        <div class="detail-value">
+          <span class="badge {% if product.quantity == 0 %}badge-danger{% elif product.quantity <= product.low_stock_threshold %}badge-warning{% else %}badge-success{% endif %}" style="font-size:14px;padding:4px 12px">
+            {{ product.quantity }} {{ product.unit }}
+          </span>
+        </div>
+      </div>
+      <div class="detail-item"><div class="detail-label">Cost Price</div><div class="detail-value mono">₹{{ "{:,.2f}".format(product.cost_price) }}</div></div>
+      <div class="detail-item"><div class="detail-label">Selling Price</div><div class="detail-value mono text-accent">₹{{ "{:,.2f}".format(product.selling_price) }}</div></div>
+      <div class="detail-item"><div class="detail-label">Stock Value</div><div class="detail-value mono text-success">₹{{ "{:,.2f}".format(product.quantity * product.cost_price) }}</div></div>
+      <div class="detail-item"><div class="detail-label">Low Stock Alert</div><div class="detail-value mono">≤ {{ product.low_stock_threshold }} {{ product.unit }}</div></div>
+    </div>
+    {% if product.description %}
+      <hr class="divider">
+      <div style="font-size:13px;color:var(--text-secondary)">{{ product.description }}</div>
+    {% endif %}
+  </div>
+
+  {% if current_user and current_user.role in ('admin','manager') %}
+  <div class="card" style="align-self:start">
+    <div class="card-header"><div class="card-title">⚖️ Stock Adjustment</div></div>
+    <form method="POST" action="{{ url_for('inventory.adjust_stock', pid=product.id) }}" data-validate>
+      <div class="form-group">
+        <label class="form-label">Adjustment <span class="required">*</span></label>
+        <input type="number" name="adjustment" class="form-control" placeholder="+10 or -5" required>
+        <div class="form-hint">Positive = stock in, Negative = stock out</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Reason / Notes</label>
+        <textarea name="notes" class="form-control" rows="3">Manual adjustment</textarea>
+      </div>
+      <div style="background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;font-size:13px">
+          <span class="text-muted">Current Stock:</span>
+          <span class="mono fw-bold">{{ product.quantity }} {{ product.unit }}</span>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Apply Adjustment</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">📋 Stock Movement History</div>
+    <span style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted)">Last 20 records</span>
+  </div>
+  {% if history %}
+  <div class="table-wrapper">
+    <table>
+      <thead><tr><th>Date & Time</th><th>Type</th><th>Change</th><th>Before</th><th>After</th><th>Notes</th><th>By</th></tr></thead>
+      <tbody>
+        {% for h in history %}
+        <tr>
+          <td class="mono" style="font-size:12px">{{ h.created_at }}</td>
+          <td>
+            <span class="badge
+              {% if h.change_type=='sale' %}badge-danger
+              {% elif h.change_type=='purchase' %}badge-success
+              {% elif h.change_type=='production' %}badge-purple
+              {% elif h.change_type=='adjustment' %}badge-info
+              {% else %}badge-muted{% endif %}">{{ h.change_type }}</span>
+          </td>
+          <td class="mono fw-bold {{ 'text-success' if h.quantity_change > 0 else 'text-danger' }}">{{ "{:+d}".format(h.quantity_change) }}</td>
+          <td class="mono text-muted">{{ h.quantity_before }}</td>
+          <td class="mono">{{ h.quantity_after }}</td>
+          <td style="font-size:12px;color:var(--text-muted)">{{ h.notes or '—' }}</td>
+          <td style="font-size:12px;color:var(--text-muted)">{{ h.username or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state"><div class="empty-state-icon">📋</div><div>No stock history yet.</div></div>
+  {% endif %}
+</div>
+{% endblock %}

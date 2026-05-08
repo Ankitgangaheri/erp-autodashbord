@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}My Profile{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:900px">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">👤 Account Details</div>
+      {% if current_user %}
+        <span class="badge {% if current_user.role=='admin' %}badge-danger{% elif current_user.role=='manager' %}badge-warning{% else %}badge-info{% endif %}">
+          {{ current_user.role.upper() }}
+        </span>
+      {% endif %}
+    </div>
+    <form method="POST" data-validate>
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input type="text" class="form-control" value="{{ current_user.username if current_user else '' }}" disabled>
+        <div class="form-hint">Username cannot be changed.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Full Name <span class="required">*</span></label>
+        <input type="text" name="full_name" class="form-control" value="{{ current_user.full_name if current_user else '' }}" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email <span class="required">*</span></label>
+        <input type="email" name="email" class="form-control" value="{{ current_user.email if current_user else '' }}" required>
+      </div>
+      <hr class="divider">
+      <div style="font-family:var(--font-display);font-weight:700;font-size:13px;margin-bottom:12px;color:var(--text-secondary)">🔒 Change Password</div>
+      <div class="form-group">
+        <label class="form-label">Current Password</label>
+        <input type="password" name="current_password" class="form-control" placeholder="Required to change password">
+      </div>
+      <div class="form-group">
+        <label class="form-label">New Password</label>
+        <input type="password" name="new_password" class="form-control" minlength="6" placeholder="Leave blank to keep current">
+      </div>
+      <button type="submit" class="btn btn-primary">✓ Update Profile</button>
+    </form>
+  </div>
+
+  <div class="card" style="align-self:start">
+    <div class="card-header"><div class="card-title">📊 Account Info</div></div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="detail-item">
+        <div class="detail-label">Avatar</div>
+        <div style="width:52px;height:52px;background:var(--accent);color:#000;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:22px;margin-top:4px">
+          {{ current_user.full_name[0].upper() if current_user else 'U' }}
+        </div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Member Since</div>
+        <div class="detail-value">{{ current_user.created_at[:10] if current_user else '—' }}</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Last Login</div>
+        <div class="detail-value">{{ current_user.last_login[:16] if current_user and current_user.last_login else 'Just now' }}</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Account Status</div>
+        <div class="detail-value"><span class="badge badge-success">Active</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

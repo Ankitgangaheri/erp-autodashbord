@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Customers{% endblock %}
+{% block page_title %}Customer Records{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('sales.add_customer') }}" class="btn btn-primary btn-sm">+ Add Customer</a>
+{% endblock %}
+{% block content %}
+<form method="GET">
+  <div class="filter-bar">
+    <div class="search-input-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" name="search" class="search-input" placeholder="Search customers…" value="{{ search }}">
+    </div>
+    <button type="submit" class="btn btn-secondary">Search</button>
+    <a href="{{ url_for('sales.customers') }}" class="btn btn-secondary">Clear</a>
+  </div>
+</form>
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">👥 Customers
+      <span style="font-family:var(--font-mono);font-size:12px;color:var(--text-muted);font-weight:400">({{ customers.total }})</span>
+    </div>
+  </div>
+  {% if customers.items %}
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Name</th><th>Email</th><th>Phone</th><th>City</th><th>Member Since</th></tr>
+      </thead>
+      <tbody>
+        {% for c in customers.items %}
+        <tr>
+          <td><span class="fw-bold">{{ c.name }}</span></td>
+          <td style="color:var(--text-secondary)">{{ c.email or '—' }}</td>
+          <td class="mono" style="font-size:12px">{{ c.phone or '—' }}</td>
+          <td>{{ c.city or '—' }}</td>
+          <td style="font-size:12px;color:var(--text-muted)">{{ c.created_at[:10] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if customers.pages > 1 %}
+  <div class="pagination">
+    {% if customers.has_prev %}
+      <a href="{{ url_for('sales.customers', page=customers.prev_num, search=search) }}" class="page-link">‹</a>
+    {% endif %}
+    {% for pn in range(1, customers.pages+1) %}
+      <a href="{{ url_for('sales.customers', page=pn, search=search) }}"
+         class="page-link {{ 'active' if pn == customers.page }}">{{ pn }}</a>
+    {% endfor %}
+    {% if customers.has_next %}
+      <a href="{{ url_for('sales.customers', page=customers.next_num, search=search) }}" class="page-link">›</a>
+    {% endif %}
+  </div>
+  {% endif %}
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon">👥</div>
+    <div class="empty-state-text">No customers found.</div>
+    <a href="{{ url_for('sales.add_customer') }}" class="btn btn-primary">+ Add Customer</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

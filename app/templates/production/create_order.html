@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Create Work Order{% endblock %}
+{% block page_title %}Create Work Order{% endblock %}
+{% block topbar_actions %}<a href="{{ url_for('production.index') }}" class="btn btn-secondary btn-sm">← Back</a>{% endblock %}
+{% block content %}
+<form method="POST" data-validate>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+    <div class="card">
+      <div class="card-header"><div class="card-title">⚙️ Work Order Details</div></div>
+      <div class="form-group">
+        <label class="form-label">Finished Product <span class="required">*</span></label>
+        <select name="product_id" class="form-control" required>
+          <option value="">Select product to produce…</option>
+          {% for p in products %}
+            <option value="{{ p.id }}">{{ p.name }} ({{ p.sku }})</option>
+          {% endfor %}
+        </select>
+        <div class="form-hint">The finished goods product being manufactured.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Planned Quantity <span class="required">*</span></label>
+        <input type="number" name="quantity_planned" class="form-control" min="1" placeholder="Units to produce" required>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Start Date</label>
+          <input type="date" name="start_date" class="form-control">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Target End Date</label>
+          <input type="date" name="end_date" class="form-control">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea name="notes" class="form-control" rows="3" placeholder="Production notes…"></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">✓ Create Work Order</button>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">🧱 Raw Materials</div>
+        <button type="button" id="add-mat-btn" class="btn btn-secondary btn-sm">+ Add Material</button>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">
+        Specify raw materials consumed during production. Stock deducted when order is started.
+      </div>
+      <div id="materials-list"></div>
+      <div id="no-mat-msg" style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px">
+        No materials added yet.
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}
+{% block extra_js %}
+<script>
+const productList = [
+  {% for p in products %}
+  { id: {{ p.id }}, name: {{ p.name | tojson }}, sku: {{ p.sku | tojson }}, quantity: {{ p.quantity }}, unit: {{ p.unit | tojson }} },
+  {% endfor %}
+];
+const list   = document.getElementById('materials-list');
+const noMsg  = document.getElementById('no-mat-msg');
+
+document.getElementById('add-mat-btn').addEventListener('click', () => {
+  noMsg.style.display = 'none';
+  const row = document.createElement('div');
+  row.style.cssText = 'display:grid;grid-template-columns:1fr 110px 30px;gap:8px;margin-bottom:8px;align-items:center';
+  row.innerHTML = `
+    <select name="material_id[]" class="form-control" required>
+      <option value="">Select material…</option>
+      ${productList.map(p => `<option value="${p.id}">${p.name} — Stock: ${p.quantity} ${p.unit}</option>`).join('')}
+    </select>
+    <input type="number" name="material_qty[]" class="form-control mono" min="1" placeholder="Qty" required>
+    <button type="button" onclick="this.closest('div').remove();checkNoMat()"
+      style="background:none;border:none;color:var(--red);font-size:18px;cursor:pointer;padding:4px">✕</button>
+  `;
+  list.appendChild(row);
+});
+
+function checkNoMat() {
+  if (!list.children.length) noMsg.style.display = 'block';
+}
+</script>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Inventory Report{% endblock %}
+{% block page_title %}Inventory Report{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('reports.inventory_report', category=category_id, stock=stock_filter, export='csv') }}" class="btn btn-secondary btn-sm">⬇ Export CSV</a>
+  <a href="{{ url_for('reports.index') }}" class="btn btn-secondary btn-sm">← Reports</a>
+{% endblock %}
+{% block content %}
+<form method="GET">
+  <div class="filter-bar">
+    <select name="category" class="form-control" style="width:180px">
+      <option value="">All Categories</option>
+      {% for cat in categories %}
+        <option value="{{ cat.id }}" {% if category_id == cat.id|string %}selected{% endif %}>{{ cat.name }}</option>
+      {% endfor %}
+    </select>
+    <select name="stock" class="form-control" style="width:150px">
+      <option value="">All Stock</option>
+      <option value="low" {% if stock_filter=='low' %}selected{% endif %}>Low Stock</option>
+      <option value="out" {% if stock_filter=='out' %}selected{% endif %}>Out of Stock</option>
+    </select>
+    <button type="submit" class="btn btn-secondary">Filter</button>
+    <a href="{{ url_for('reports.inventory_report') }}" class="btn btn-secondary">Clear</a>
+  </div>
+</form>
+
+<div class="stats-grid" style="margin-bottom:16px">
+  <div class="stat-card blue"><div class="stat-label">Total Products</div><div class="stat-value">{{ total_items }}</div><div class="stat-icon">📦</div></div>
+  <div class="stat-card amber"><div class="stat-label">Stock Value</div><div class="stat-value">₹{{ "{:,.0f}".format(total_value) }}</div><div class="stat-icon">💰</div></div>
+  <div class="stat-card red"><div class="stat-label">Low Stock</div><div class="stat-value">{{ low_stock_count }}</div><div class="stat-icon">⚠️</div></div>
+</div>
+
+<div class="card">
+  <div class="card-header"><div class="card-title">📦 Inventory List</div></div>
+  {% if products %}
+  <div class="table-wrapper">
+    <table>
+      <thead><tr><th>SKU</th><th>Product</th><th>Category</th><th>Unit</th><th>Qty</th><th>Cost</th><th>Sell</th><th>Value</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for p in products %}
+        <tr>
+          <td><span class="sku">{{ p.sku }}</span></td>
+          <td><a href="{{ url_for('inventory.view_product', pid=p.id) }}" style="color:var(--text-primary)">{{ p.name }}</a></td>
+          <td>{{ p.cat_name }}</td>
+          <td class="mono">{{ p.unit }}</td>
+          <td><span class="badge {% if p.quantity==0 %}badge-danger{% elif p.is_low_stock %}badge-warning{% else %}badge-success{% endif %}">{{ p.quantity }}</span></td>
+          <td class="mono">₹{{ "{:,.2f}".format(p.cost_price) }}</td>
+          <td class="mono">₹{{ "{:,.2f}".format(p.selling_price) }}</td>
+          <td class="mono text-accent">₹{{ "{:,.0f}".format(p.stock_value) }}</td>
+          <td>{% if p.quantity==0 %}<span class="badge badge-danger">OUT</span>{% elif p.is_low_stock %}<span class="badge badge-warning">LOW</span>{% else %}<span class="badge badge-success">OK</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="7" class="text-right fw-bold" style="padding:12px 14px;color:var(--text-secondary)">TOTAL VALUE</td>
+          <td class="mono fw-bold text-accent" style="padding:12px 14px;font-size:15px">₹{{ "{:,.0f}".format(total_value) }}</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state"><div class="empty-state-icon">📦</div><div>No products match filters.</div></div>
+  {% endif %}
+</div>
+{% endblock %}

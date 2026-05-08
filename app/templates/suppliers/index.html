@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Suppliers{% endblock %}
+{% block page_title %}Supplier Management{% endblock %}
+{% block topbar_actions %}
+  {% if current_user and current_user.role in ('admin','manager') %}
+    <a href="{{ url_for('suppliers.add_supplier') }}" class="btn btn-primary btn-sm">+ Add Supplier</a>
+  {% endif %}
+{% endblock %}
+{% block content %}
+<form method="GET">
+  <div class="filter-bar">
+    <div class="search-input-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" name="search" class="search-input" placeholder="Search suppliers…" value="{{ search }}">
+    </div>
+    <button type="submit" class="btn btn-secondary">Search</button>
+    <a href="{{ url_for('suppliers.index') }}" class="btn btn-secondary">Clear</a>
+  </div>
+</form>
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">🏭 Suppliers <span style="font-family:var(--font-mono);font-size:12px;color:var(--text-muted);font-weight:400">({{ suppliers.total }})</span></div>
+  </div>
+  {% if suppliers.items %}
+  <div class="table-wrapper">
+    <table>
+      <thead><tr><th>Name</th><th>Contact</th><th>Phone</th><th>City</th><th>Purchases</th><th>Total Spent</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for s in suppliers.items %}
+        <tr>
+          <td><a href="{{ url_for('suppliers.view_supplier', sid=s.id) }}" style="color:var(--text-primary);font-weight:500">{{ s.name }}</a></td>
+          <td style="color:var(--text-secondary)">{{ s.contact_person or '—' }}</td>
+          <td class="mono" style="font-size:12px">{{ s.phone or '—' }}</td>
+          <td>{{ s.city or '—' }}</td>
+          <td><span class="badge badge-info">{{ s.purchase_count }}</span></td>
+          <td class="mono text-accent">₹{{ "{:,.0f}".format(s.total_purchases) }}</td>
+          <td><span class="badge {{ 'badge-success' if s.is_active else 'badge-muted' }}">{{ 'Active' if s.is_active else 'Inactive' }}</span></td>
+          <td>
+            <div style="display:flex;gap:4px">
+              <a href="{{ url_for('suppliers.view_supplier', sid=s.id) }}" class="btn btn-sm btn-secondary">👁</a>
+              {% if current_user and current_user.role in ('admin','manager') %}
+                <a href="{{ url_for('suppliers.edit_supplier', sid=s.id) }}" class="btn btn-sm btn-info">✏️</a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if suppliers.pages > 1 %}
+  <div class="pagination">
+    {% if suppliers.has_prev %}<a href="{{ url_for('suppliers.index', page=suppliers.prev_num, search=search) }}" class="page-link">‹</a>{% endif %}
+    {% for pn in range(1, suppliers.pages+1) %}
+      <a href="{{ url_for('suppliers.index', page=pn, search=search) }}" class="page-link {{ 'active' if pn == suppliers.page }}">{{ pn }}</a>
+    {% endfor %}
+    {% if suppliers.has_next %}<a href="{{ url_for('suppliers.index', page=suppliers.next_num, search=search) }}" class="page-link">›</a>{% endif %}
+  </div>
+  {% endif %}
+  {% else %}
+  <div class="empty-state"><div class="empty-state-icon">🏭</div><div class="empty-state-text">No suppliers found.</div>{% if current_user and current_user.role in ('admin','manager') %}<a href="{{ url_for('suppliers.add_supplier') }}" class="btn btn-primary">+ Add Supplier</a>{% endif %}</div>
+  {% endif %}
+</div>
+{% endblock %}

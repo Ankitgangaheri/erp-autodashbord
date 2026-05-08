@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}{{ supplier.name }}{% endblock %}
+{% block page_title %}Supplier Detail{% endblock %}
+{% block topbar_actions %}
+  {% if current_user and current_user.role in ('admin','manager') %}
+    <a href="{{ url_for('suppliers.edit_supplier', sid=supplier.id) }}" class="btn btn-info btn-sm">✏️ Edit</a>
+  {% endif %}
+  <a href="{{ url_for('suppliers.index') }}" class="btn btn-secondary btn-sm">← Suppliers</a>
+{% endblock %}
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">🏭 {{ supplier.name }}</div>
+      <span class="badge {{ 'badge-success' if supplier.is_active else 'badge-muted' }}">{{ 'Active' if supplier.is_active else 'Inactive' }}</span>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-item"><div class="detail-label">Contact</div><div class="detail-value">{{ supplier.contact_person or '—' }}</div></div>
+      <div class="detail-item"><div class="detail-label">Email</div><div class="detail-value">{{ supplier.email or '—' }}</div></div>
+      <div class="detail-item"><div class="detail-label">Phone</div><div class="detail-value mono">{{ supplier.phone or '—' }}</div></div>
+      <div class="detail-item"><div class="detail-label">City</div><div class="detail-value">{{ supplier.city or '—' }}{% if supplier.city and supplier.country %}, {% endif %}{{ supplier.country or '' }}</div></div>
+      <div class="detail-item"><div class="detail-label">GST</div><div class="detail-value mono">{{ supplier.gst_number or '—' }}</div></div>
+      <div class="detail-item"><div class="detail-label">Payment Terms</div><div class="detail-value">{{ supplier.payment_terms or '—' }}</div></div>
+    </div>
+    {% if supplier.address %}<hr class="divider"><div style="font-size:13px;color:var(--text-secondary)">📍 {{ supplier.address }}</div>{% endif %}
+  </div>
+  <div class="card" style="align-self:start">
+    <div class="card-header"><div class="card-title">📊 Purchase Summary</div></div>
+    <div class="detail-grid">
+      <div class="detail-item"><div class="detail-label">Total Orders</div><div class="detail-value" style="font-size:28px;font-family:var(--font-display);font-weight:800">{{ supplier.purchase_count }}</div></div>
+      <div class="detail-item"><div class="detail-label">Total Value</div><div class="detail-value text-accent" style="font-size:22px;font-family:var(--font-display);font-weight:700">₹{{ "{:,.0f}".format(supplier.total_purchases) }}</div></div>
+    </div>
+    <hr class="divider">
+    <a href="{{ url_for('purchases.create_purchase') }}" class="btn btn-primary">🛒 New Purchase Order</a>
+  </div>
+</div>
+<div class="card">
+  <div class="card-header"><div class="card-title">📋 Purchase History</div></div>
+  {% if purchases %}
+  <div class="table-wrapper">
+    <table>
+      <thead><tr><th>PO Number</th><th>Date</th><th>Status</th><th>Total</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for po in purchases %}
+        <tr>
+          <td><a href="{{ url_for('purchases.view_purchase', po_id=po.id) }}" class="sku">{{ po.po_number }}</a></td>
+          <td style="font-size:12px">{{ po.order_date[:10] }}</td>
+          <td><span class="badge {{ 'badge-success' if po.status=='received' else ('badge-warning' if po.status=='pending' else 'badge-danger') }}">{{ po.status }}</span></td>
+          <td class="mono text-accent">₹{{ "{:,.2f}".format(po.total_amount) }}</td>
+          <td><a href="{{ url_for('purchases.view_purchase', po_id=po.id) }}" class="btn btn-sm btn-secondary">View</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state"><div class="empty-state-icon">📋</div><div>No purchase orders yet.</div></div>
+  {% endif %}
+</div>
+{% endblock %}
