@@ -18,16 +18,14 @@ def create_app():
     app.config['ITEMS_PER_PAGE'] = 15
     app.config['LOW_STOCK_THRESHOLD'] = 10
 
-    # ── Logging ──
+        # —— Logging ——
     os.makedirs('logs', exist_ok=True)
-   if os.environ.get('VERCEL') != '1':
-    fh = RotatingFileHandler('logs/autoerp.log', maxBytes=1_000_000, backupCount=5)
-    fh.setLevel(logging.INFO)
-    app.logger.addHandler(fh) fh = RotatingFileHandler('logs/autoerp.log', maxBytes=1_000_000, backupCount=5)
-    fh.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
-    fh.setLevel(logging.INFO)
-    app.logger.addHandler(fh)
-    app.logger.setLevel(logging.INFO)
+    if os.environ.get('VERCEL') != '1':
+        fh = RotatingFileHandler('logs/autoerp.log', maxBytes=1_000_000, backupCount=5)
+        fh.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s'))
+        fh.setLevel(logging.INFO)
+        app.logger.addHandler(fh)
+        app.logger.setLevel(logging.INFO)
 
     # ── Init DB ──
     from app.database import init_db
