@@ -20,7 +20,10 @@ def create_app():
 
     # ── Logging ──
     os.makedirs('logs', exist_ok=True)
+   if os.environ.get('VERCEL') != '1':
     fh = RotatingFileHandler('logs/autoerp.log', maxBytes=1_000_000, backupCount=5)
+    fh.setLevel(logging.INFO)
+    app.logger.addHandler(fh) fh = RotatingFileHandler('logs/autoerp.log', maxBytes=1_000_000, backupCount=5)
     fh.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
     fh.setLevel(logging.INFO)
     app.logger.addHandler(fh)
