@@ -13,14 +13,11 @@ DATABASE_URL = os.environ.get("DATABASE_URL")
 
 
 def get_db():
-    """Return a psycopg2 connection with dict-like row access."""
     conn = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
     return conn
 
 
 class _CursorWrapper:
-    """Makes psycopg2's '%s' placeholders work with the app's '?' style calls,
-    and makes execute() return self so existing .fetchone()/.fetchall() calls work."""
     def __init__(self, cursor):
         self._cursor = cursor
 
@@ -53,7 +50,6 @@ class _ConnWrapper:
         self._cursor = _CursorWrapper(conn.cursor())
 
     def execute(self, query, params=()):
-        # Auto-return inserted id for INSERT statements (mimics sqlite lastrowid)
         if query.strip().upper().startswith("INSERT") and "RETURNING" not in query.upper():
             query = query.rstrip().rstrip(";") + " RETURNING id"
         return self._cursor.execute(query, params)
@@ -73,7 +69,6 @@ class _ConnWrapper:
 
 @contextmanager
 def db_conn():
-    """Context manager — auto-commits or rolls back."""
     raw_conn = get_db()
     conn = _ConnWrapper(raw_conn)
     try:
@@ -87,18 +82,16 @@ def db_conn():
 
 
 def init_db():
-    """Tables already created in Supabase — just seed defaults if missing."""
     _seed_defaults()
 
 
 def _seed_defaults():
-    """Insert default users and categories if not present."""
     from werkzeug.security import generate_password_hash
     with db_conn() as conn:
         defaults = [
-            ('admin',   'admin@autoerp.com',   'System Administrator', 'admin',   'admin123'),
-            ('manager', 'manager@autoerp.com', 'Floor Manager',        'manager', 'manager123'),
-            ('staff',   'staff@autoerp.com',   'Staff User',           'staff',   'staff123'),
+            ('admin', 'admin@autoerp.com', 'System Administrator', 'admin', 'admin123'),
+            ('manager', 'manager@autoerp.com', 'Floor Manager', 'manager', 'manager123'),
+            ('staff', 'staff@autoerp.com', 'Staff User', 'staff', 'staff123'),
         ]
         for username, email, full_name, role, pwd in defaults:
             exists = conn.execute('SELECT id FROM users WHERE username=?', (username,)).fetchone()
@@ -108,8 +101,8 @@ def _seed_defaults():
                     (username, email, full_name, generate_password_hash(pwd), role)
                 )
 
-        cats = ['Engine', 'Transmission', 'Brakes', 'Suspension',
-                'Electrical', 'Body Parts', 'Accessories', 'Tires', 'Fluids']
+        cats = ['Engine', 'Transmission', 'Brakes', 'Suspension', 'Electrical', 'Body Parts', 'Accessories', 'Tires', 'Fluids']
         for cat in cats:
             exists = conn.execute('SELECT id FROM categories WHERE name=?', (cat,)).fetchone()
             if not exists:
+                conn.execute('INSERT INTO categories (name,description) VALUES (?,?)', (cat, f'{cat} components and parts'))
