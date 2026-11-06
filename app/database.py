@@ -1,7 +1,6 @@
 """
-AutoERP Database Layer
-Uses PostgreSQL (via psycopg2) on Vercel, with the same db_conn()/get_db()
-interface the rest of the app already relies on.
+AutoERP Database Layer (PostgreSQL via psycopg2)
+Keeps the same get_db()/db_conn() interface the app already uses.
 """
 
 import os
@@ -12,17 +11,13 @@ from contextlib import contextmanager
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 
-def get_db():
-    conn = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
-    return conn
-
-
 class _CursorWrapper:
     def __init__(self, cursor):
         self._cursor = cursor
 
     def execute(self, query, params=()):
-        query = query.replace("?", "%s")
+        if params:
+            query = query.replace("%", "%%").replace("?", "%s")
         self._cursor.execute(query, params)
         return self
 
@@ -39,7 +34,10 @@ class _CursorWrapper:
     @property
     def lastrowid(self):
         try:
-            return self._cursor.fetchone()[0]
+            row = self._cursor.fetchone()
+            if row is None:
+                return None
+            return row["id"] if isinstance(row, dict) else row[0]
         except Exception:
             return None
 
@@ -67,10 +65,14 @@ class _ConnWrapper:
         self._conn.close()
 
 
+def get_db():
+    raw_conn = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
+    return _ConnWrapper(raw_conn)
+
+
 @contextmanager
 def db_conn():
-    raw_conn = get_db()
-    conn = _ConnWrapper(raw_conn)
+    conn = get_db()
     try:
         yield conn
         conn.commit()
@@ -101,8 +103,10 @@ def _seed_defaults():
                     (username, email, full_name, generate_password_hash(pwd), role)
                 )
 
-        cats = ['Engine', 'Transmission', 'Brakes', 'Suspension', 'Electrical', 'Body Parts', 'Accessories', 'Tires', 'Fluids']
+        cats = ['Engine', 'Transmission', 'Brakes', 'Suspension', 'Electrical',
+                'Body Parts', 'Accessories', 'Tires', 'Fluids']
         for cat in cats:
             exists = conn.execute('SELECT id FROM categories WHERE name=?', (cat,)).fetchone()
             if not exists:
-                conn.execute('INSERT INTO categories (name,description) VALUES (?,?)', (cat, f'{cat} components and parts'))
+                conn.execute('INSERT INTO categories (name,description) VALUES (?,?)',
+                             (cat, f'{cat} components and parts'))
